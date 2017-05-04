@@ -20,12 +20,19 @@ url = "https://www.googleapis.com/qpxExpress/v1/trips/search?key="+apiKey
 
 # List of Friday and Sunday Dates
 weekends = []
+if len(sys.argv < 3):
+	departureDay = 4 # Default Friday departure code for below loop
+elif lower(sys.argv[3])[:4] == "thurs":
+    departureDay = 3
+else:
+	departureDay = 4 # Default Friday departure code for below loop
 
 # For the next 56 days...
 for i in range(14,56):
     
+
     # If the day's name is Friday, add it to the list
-    if (datetime.date.today() + datetime.timedelta(days = i)).weekday() == 4:
+    if (datetime.date.today() + datetime.timedelta(days = i)).weekday() == departureDay:
         thisFriday = datetime.date.today() + datetime.timedelta(days = i)
         thisSunday = datetime.date.today() + datetime.timedelta(days = i+2)
         weekends.append({"friday":thisFriday, "sunday":thisSunday})
@@ -36,7 +43,7 @@ numTickets = 1
 origin = "YTZ"
 destination = sys.argv[1]
 maxPrice = "CAD600"
-numResponses = 20
+numResponses = 50
 #date = year+"-"+month+"-"+day
 
 responses = []
