@@ -94,7 +94,8 @@ for weekend in weekends:
 # for each search, modify the json, send request for many dates
 # send text (and email) if certain criteria are met
 try:
-    if float(min(responses, key=lambda x: x['price'])['price'][3:]) < 160:
+	# if cheapest flight of all flights found in this run is less than 2nd command line input, send text!
+    if float(min(responses, key=lambda x: x['price'])['price'][3:]) < sys.argv[2]:
         flight = min(responses, key=lambda x: x['price'])
         twilioClient.messages.create(
             to="+16475457050",
