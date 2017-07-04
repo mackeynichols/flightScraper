@@ -7,12 +7,12 @@ import json
 import sys
 import twilio
 import pprint
-
+'''
 # twilio credentials
 account_sid = "AC3ef47f5c8738185a46afd524580cc60b"
 auth_token = "3d2e043ad7b55e10c12f9436b7433f22"
 twilioClient = twilio.rest.TwilioRestClient(account_sid, auth_token)
-
+'''
 
 # init url and api key
 apiKey = "AIzaSyColmjm796njJk4eoDp24ygH64xkeK0q0E"
@@ -20,12 +20,12 @@ url = "https://www.googleapis.com/qpxExpress/v1/trips/search?key="+apiKey
 
 # List of Friday and Sunday Dates
 weekends = []
-if len(sys.argv < 3):
-	departureDay = 4 # Default Friday departure code for below loop
-elif lower(sys.argv[3])[:4] == "thurs":
+if len(sys.argv) < 4:
+    departureDay = 4 # Default Friday departure code for below loop
+elif sys.argv[3].lower()[:4] == "thurs":
     departureDay = 3
 else:
-	departureDay = 4 # Default Friday departure code for below loop
+    departureDay = 4 # Default Friday departure code for below loop
 
 # For the next 56 days...
 for i in range(14,56):
@@ -42,7 +42,7 @@ for i in range(14,56):
 numTickets = 1
 origin = "YTZ"
 destination = sys.argv[1]
-maxPrice = "CAD600"
+maxPrice = "CAD400"
 numResponses = 50
 #date = year+"-"+month+"-"+day
 
@@ -75,7 +75,7 @@ for weekend in weekends:
           }
         ],
             
-        #"maxPrice": maxPrice,
+        "maxPrice": maxPrice,
         "refundable": "false",
         "solutions": numResponses
       }
@@ -85,18 +85,22 @@ for weekend in weekends:
     r = json.loads(requests.post(url, json = inputJson).text)
 
     # for each response in this request, find the lowest cost
-    for i in range(len(r['trips']['tripOption'])):
-        try:
-            thisFlight = {
+    try:
+        for i in range(len(r['trips']['tripOption'])):
+            try:
+                thisFlight = {
                 "price": r['trips']['tripOption'][i]['saleTotal'],
                 "flightNo": r['trips']['tripOption'][i]['slice'][0]['segment'][0]['flight']['carrier']+r['trips']['tripOption'][i]['slice'][0]['segment'][0]['flight']['number'],
                 "departureFromYTZ": r['trips']['tripOption'][i]['slice'][0]['segment'][0]['leg'][0]['departureTime']
                 }
+                    
+                pprint.pprint(thisFlight)
+                responses.append(thisFlight)
+            except:
+                print("Error: "+ sys.exc_info()[0])
+    except:
+            print("no cheap flights found")
             
-            pprint.pprint(thisFlight)
-            responses.append(thisFlight)
-        except:
-           print("Error: "+ sys.exc_info()[0])
 
 # for each search, modify the json, send request for many dates
 # send text (and email) if certain criteria are met
