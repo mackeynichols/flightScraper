@@ -5,14 +5,8 @@ import requests
 import datetime
 import json
 import sys
-import twilio
 import pprint
-'''
-# twilio credentials
-account_sid = "AC3ef47f5c8738185a46afd524580cc60b"
-auth_token = "3d2e043ad7b55e10c12f9436b7433f22"
-twilioClient = twilio.rest.TwilioRestClient(account_sid, auth_token)
-'''
+
 
 # init url and api key
 apiKey = "AIzaSyColmjm796njJk4eoDp24ygH64xkeK0q0E"
@@ -101,17 +95,11 @@ for weekend in weekends:
     except:
             print("no cheap flights found")
             
-
 # for each search, modify the json, send request for many dates
 # send text (and email) if certain criteria are met
 try:
 	# if cheapest flight of all flights found in this run is less than 2nd command line input, send text!
     if float(min(responses, key=lambda x: x['price'])['price'][3:]) < sys.argv[2]:
-        flight = min(responses, key=lambda x: x['price'])
-        twilioClient.messages.create(
-            to="+16475457050",
-            from_="+13069926945",
-            body="CHEAP FLIGHT TO "+sys.argv[1]+" --\n Flight "+ flight['flightNo']+"\nleaving YTZ at "+flight['departureFromYTZ']+"\ncosts "+flight['price']
-            )
+
 except:
     pass
