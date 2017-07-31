@@ -1,11 +1,25 @@
 #! python3
 # flightScraper.py - loops through tailored json inputs for google flights api
 
+# COMMAND LINE INPUTS
+# 1: airport
+# 2: minimum price
+# 3: gmail password
+# 4: optional departure day (thursday or friday)
+
+
 import requests
 import datetime
 import json
 import sys
 import pprint
+import smtplib
+
+# init smtplib
+to = 'mackey.nichols@gmail.com'
+gmail_user = 'mackey.nichols@gmail.com'
+gmail_pwd = sys.argv[3]
+
 
 
 # init url and api key
@@ -14,15 +28,15 @@ url = "https://www.googleapis.com/qpxExpress/v1/trips/search?key="+apiKey
 
 # List of Friday and Sunday Dates
 weekends = []
-if len(sys.argv) < 4:
+if len(sys.argv) < 5:
     departureDay = 4 # Default Friday departure code for below loop
-elif sys.argv[3].lower()[:4] == "thurs":
+elif sys.argv[4].lower()[:4] == "thurs":
     departureDay = 3
 else:
     departureDay = 4 # Default Friday departure code for below loop
 
 # For the next 56 days...
-for i in range(14,56):
+for i in range(14,21):
     
 
     # If the day's name is Friday, add it to the list
@@ -36,7 +50,7 @@ for i in range(14,56):
 numTickets = 1
 origin = "YTZ"
 destination = sys.argv[1]
-maxPrice = "CAD400"
+maxPrice = "CAD"+str(sys.argv[2])
 numResponses = 50
 #date = year+"-"+month+"-"+day
 
@@ -97,9 +111,16 @@ for weekend in weekends:
             
 # for each search, modify the json, send request for many dates
 # send text (and email) if certain criteria are met
-try:
-	# if cheapest flight of all flights found in this run is less than 2nd command line input, send text!
-    if float(min(responses, key=lambda x: x['price'])['price'][3:]) < sys.argv[2]:
+    # if cheapest flight of all flights found in this run is less than 2nd command line input, send text!
+if float(min(responses, key=lambda x: x['price'])['price'][3:]) < float(sys.argv[2]):
+    smtpserver = smtplib.SMTP("smtp.gmail.com",587)
+    smtpserver.ehlo()
+    smtpserver.starttls()
+    smtpserver.ehlo
+    smtpserver.login(gmail_user, gmail_pwd)
+    header = 'To:' + to + '\n' + 'From: ' + gmail_user + '\n' + 'Subject:testing \n'
+    msg = header + '\n Cheap flight to '+sys.argv[1]+' found: \n'+min(responses, key=lambda x: x['price'])['flightNo']+' costs '+min(responses, key=lambda x: x['price'])['price']+' and departs '+min(responses, key=lambda x: x['price'])['departureFromYTZ']+ '\n\n'
+    smtpserver.sendmail(gmail_user, to, msg)    
+    smtpserver.close()
 
-except:
-    pass
+
