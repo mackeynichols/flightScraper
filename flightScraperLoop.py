@@ -6,6 +6,7 @@
 # 2: To Airport
 # 3: Number of Days from Today to start looking from
 # 4: Number of Days to search
+# 5: Number of Flights to return with each email
 # 5: Email Password
 
 import requests
@@ -20,7 +21,7 @@ from email.mime.text import MIMEText
 # init smtplib and smtpserver
 to = 'mackey.nichols@gmail.com'
 gmail_user = 'mackey.nichols@gmail.com'
-gmail_pwd = sys.argv[5]
+gmail_pwd = sys.argv[6]
 smtpserver = smtplib.SMTP("smtp.gmail.com",587)
 smtpserver.ehlo()
 smtpserver.starttls()
@@ -38,6 +39,8 @@ origin = sys.argv[1]
 destination = sys.argv[2]
 daysFromToday = int(sys.argv[3])
 daysToSearch = int(sys.argv[4])
+flightsToReturn = int(sys.argv[5])
+
 numResponses = 50
 
 responses = []
@@ -94,7 +97,7 @@ for searchDate in [ datetime.date.today() + datetime.timedelta(days=daysFromToda
            
 # Sort reponses by price
 goodResponses = sorted(responses, key = lambda k: float(k['price'][3:]) )
-bestResponses = [goodResponses[i] for i in range(3)]
+bestResponses = [goodResponses[i] for i in range(flightsToReturn)]
 
 
 # Email top 3 responses
