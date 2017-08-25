@@ -14,11 +14,18 @@ import json
 import sys
 import pprint
 import smtplib
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
 
-# init smtplib
+# init smtplib and smtpserver
 to = 'mackey.nichols@gmail.com'
 gmail_user = 'mackey.nichols@gmail.com'
 gmail_pwd = sys.argv[5]
+smtpserver = smtplib.SMTP("smtp.gmail.com",587)
+smtpserver.ehlo()
+smtpserver.starttls()
+smtpserver.ehlo
+smtpserver.login(gmail_user, gmail_pwd)
 
 # init url and api key
 apiKey = "AIzaSyColmjm796njJk4eoDp24ygH64xkeK0q0E"
@@ -68,57 +75,46 @@ for searchDate in [ datetime.date.today() + datetime.timedelta(days=daysFromToda
 
     # for each response in this request, summarize the response and add it to responses array
     for i in range(len(r['trips']['tripOption'])):
+        dateObject = datetime.datetime.strptime(r['trips']['tripOption'][i]['slice'][0]['segment'][0]['leg'][0]['departureTime'][:-6], "%Y-%m-%dT%H:%M")
 
-            thisFlight = {
-            "price": r['trips']['tripOption'][i]['saleTotal'],
-            "flightNo": r['trips']['tripOption'][i]['slice'][0]['segment'][0]['flight']['carrier']+r['trips']['tripOption'][i]['slice'][0]['segment'][0]['flight']['number'],
-            "departureFrom"+origin: r['trips']['tripOption'][i]['slice'][0]['segment'][0]['leg'][0]['departureTime']
-            }
-                
-            responses.append(thisFlight)
+        date = dateObject.strftime('%A, %B %d, %G at %H:%M')
+        dayOfWeek = dateObject.strftime('%A')
+        time = dateObject.strftime('%H:%M')
+        
+        thisFlight = {
+        "price": r['trips']['tripOption'][i]['saleTotal'],
+        "flightNo": r['trips']['tripOption'][i]['slice'][0]['segment'][0]['flight']['carrier']+r['trips']['tripOption'][i]['slice'][0]['segment'][0]['flight']['number'],
+        "departureFromDate": date,
+        "departureFromDayofweek": dayOfWeek,
+        "departureFromTime": time
+        }
             
+        responses.append(thisFlight)
+
            
-pprint.pprint(responses)
-
-'''
-=============
-TRASH
-=============
+# Sort reponses by price
+goodResponses = sorted(responses, key = lambda k: float(k['price'][3:]) )
+bestResponses = [goodResponses[i] for i in range(3)]
 
 
-weekends = []
+# Email top 3 responses
+msg = MIMEMultipart('alternative')    
+
+subject = origin+' to '+destination+' Report - Min price: '+bestResponses[0]['price']
+msg['Subject'] = subject
+msg['From'] = gmail_user
+msg['To'] = to
+
+body = '<h3>Last Night\'s '+origin+' -> '+destination+' Flight Report</h3>\n'
+
+for response in bestResponses:
+    body += '<b>'+response['flightNo']+'</b>: '+ response['departureFromDate'] + ' costs <i><u>'+response['price']+'</u></i> <br>'  
+
+#msg.attach( MIMEText(header, 'plain') )
+msg.attach( MIMEText(body, 'html') )
 
 
-if len(sys.argv) < 5:
-    departureDay = 4 # Default Friday departure code for below loop
-elif sys.argv[4].lower()[:4] == "thurs":
-    departureDay = 3
-else:
-    departureDay = 4 # Default Friday departure code for below loop
+smtpserver.sendmail(gmail_user, to, msg.as_string())    
+smtpserver.close()
 
-# For the next 56 days...
-for i in range(14,21):
-    
-
-    # If the day's name is Friday, add it to the list
-    if (datetime.date.today() + datetime.timedelta(days = i)).weekday() == departureDay:
-        thisFriday = datetime.date.today() + datetime.timedelta(days = i)
-        thisSunday = datetime.date.today() + datetime.timedelta(days = i+2)
-        weekends.append({"friday":thisFriday, "sunday":thisSunday})
-
-# for each search, modify the json, send request for many dates
-# send text (and email) if certain criteria are met
-    # if cheapest flight of all flights found in this run is less than 2nd command line input, send text!
-if float(min(responses, key=lambda x: x['price'])['price'][3:]) < float(sys.argv[2]):
-    smtpserver = smtplib.SMTP("smtp.gmail.com",587)
-    smtpserver.ehlo()
-    smtpserver.starttls()
-    smtpserver.ehlo
-    smtpserver.login(gmail_user, gmail_pwd)
-    header = 'To:' + to + '\n' + 'From: ' + gmail_user + '\n' + 'Subject:testing \n'
-    msg = header + '\n Cheap flight to '+sys.argv[1]+' found: \n'+min(responses, key=lambda x: x['price'])['flightNo']+' costs '+min(responses, key=lambda x: x['price'])['price']+' and departs '+min(responses, key=lambda x: x['price'])['departureFromYTZ']+ '\n\n'
-    smtpserver.sendmail(gmail_user, to, msg)    
-    smtpserver.close()
-
-'''
-
+# 3: Store all of the responses into some DB
