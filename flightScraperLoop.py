@@ -15,6 +15,7 @@ import json
 import sys
 import pprint
 import smtplib
+import pymysql
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
@@ -100,7 +101,7 @@ goodResponses = sorted(responses, key = lambda k: float(k['price'][3:]) )
 bestResponses = [goodResponses[i] for i in range(flightsToReturn)]
 
 
-# Email top 3 responses
+# Email top responses
 msg = MIMEMultipart('alternative')    
 
 subject = origin+' to '+destination+' Report - Min price: '+bestResponses[0]['price']
@@ -121,3 +122,16 @@ smtpserver.sendmail(gmail_user, to, msg.as_string())
 smtpserver.close()
 
 # 3: Store all of the responses into some DB
+connection = pymysql.connect(host='localhost',
+                             user='root',
+                             password='r2d2-C3PO',
+                             db='scrapes'
+                             )
+
+with connection.cursor() as cursor:
+    for response in bestResponses:
+        sql = "INSERT INTO `flights` (`price`, `flightNo`, `origin`, `destination`, `departureDatetime`) VALUES (%s, %s, %s, %s, %s)"
+        cursor.execute(sql, (response['price'], response['flightNo'], origin, destination, response['departureFromDate']) )
+        connection.commit()
+
+connection.close()
